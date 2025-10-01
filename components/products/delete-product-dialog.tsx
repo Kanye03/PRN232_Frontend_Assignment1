@@ -22,15 +22,9 @@ interface DeleteProductDialogProps {
   onConfirm: (productId: string) => Promise<void>;
 }
 
-export function DeleteProductDialog({ 
-  product, 
-  isOpen, 
-  onClose, 
-  onConfirm 
-}: DeleteProductDialogProps) {
+export function DeleteProductDialog({ product, isOpen, onClose, onConfirm }: DeleteProductDialogProps) {
   const [isDeleting, setIsDeleting] = useState(false);
 
-  // Reset loading state when dialog is closed
   const handleClose = () => {
     if (!isDeleting) {
       setIsDeleting(false);
@@ -40,13 +34,10 @@ export function DeleteProductDialog({
 
   const handleConfirm = async () => {
     if (!product || isDeleting) return;
-    
     try {
       setIsDeleting(true);
       await onConfirm(product.id);
-      // Success - dialog will be closed by parent component
       toast.success('Sản phẩm đã được xóa thành công!');
-      // Reset loading state after successful deletion
       setIsDeleting(false);
     } catch (error) {
       console.error('Error deleting product:', error);
@@ -59,50 +50,46 @@ export function DeleteProductDialog({
 
   return (
     <AlertDialog open={isOpen} onOpenChange={handleClose}>
-      <AlertDialogContent className="sm:max-w-md">
-        <AlertDialogHeader>
-          <div className="flex items-center gap-3">
-            <div className="flex h-10 w-10 items-center justify-center rounded-full bg-destructive/10">
-              <Trash2 className="h-5 w-5 text-destructive" />
-            </div>
-            <div>
-              <AlertDialogTitle className="text-left">
-                Xóa sản phẩm
-              </AlertDialogTitle>
-            </div>
+      <AlertDialogContent className="sm:max-w-md rounded-lg shadow-lg border border-gray-200">
+        <AlertDialogHeader className="flex items-center gap-3 pb-2 border-b border-gray-200">
+          <div className="flex h-12 w-12 items-center justify-center rounded-full bg-red-100">
+            <Trash2 className="h-6 w-6 text-red-600" />
           </div>
+          <AlertDialogTitle className="text-lg font-semibold text-gray-900">
+            Xóa sản phẩm
+          </AlertDialogTitle>
         </AlertDialogHeader>
-        
-        <AlertDialogDescription className="text-left space-y-3">
+
+        <AlertDialogDescription className="py-4 text-gray-700 space-y-2">
           <p>
-            Bạn có chắc chắn muốn xóa sản phẩm <strong>&ldquo;{product.name}&rdquo;</strong> không?
+            Bạn có chắc chắn muốn xóa sản phẩm <strong>{product.name}</strong> không?
           </p>
-          <p className="text-sm text-muted-foreground">
-            Hành động này không thể hoàn tác. Sản phẩm sẽ bị xóa vĩnh viễn khỏi hệ thống.
+          <p className="text-sm text-gray-500">
+            Hành động này không thể hoàn tác và sản phẩm sẽ bị xóa vĩnh viễn khỏi hệ thống.
           </p>
         </AlertDialogDescription>
-        
-        <AlertDialogFooter className="gap-2">
-          <AlertDialogCancel 
+
+        <AlertDialogFooter className="flex flex-col sm:flex-row gap-3 sm:justify-end sm:items-center pt-2">
+          <AlertDialogCancel
             onClick={handleClose}
             disabled={isDeleting}
-            className="flex-1 sm:flex-none"
+            className="w-full sm:w-auto px-4 py-2 rounded-lg border border-gray-300 text-gray-700 hover:bg-gray-100 transition"
           >
             Hủy
           </AlertDialogCancel>
           <AlertDialogAction
             onClick={handleConfirm}
             disabled={isDeleting}
-            className="bg-destructive hover:bg-destructive/90 text-destructive-foreground flex-1 sm:flex-none"
+            className="w-full sm:w-auto px-4 py-2 rounded-lg bg-red-600 hover:bg-red-700 text-white flex items-center justify-center gap-2 transition"
           >
             {isDeleting ? (
               <>
-                <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+                <Loader2 className="h-5 w-5 animate-spin" />
                 Đang xóa...
               </>
             ) : (
               <>
-                <Trash2 className="h-4 w-4 mr-2" />
+                <Trash2 className="h-5 w-5" />
                 Xóa sản phẩm
               </>
             )}

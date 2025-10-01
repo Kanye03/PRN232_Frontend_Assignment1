@@ -5,9 +5,9 @@ import { Product, ProductAPI, PaginatedResponse, SearchParams } from '@/lib/api'
 import { ProductTable } from '@/components/admin/product-table';
 import { ProductSearch } from '@/components/products/product-search';
 import { DeleteProductDialog } from '@/components/products/delete-product-dialog';
+import { ProductForm } from '@/components/products/product-form';
 import { Button } from '@/components/ui/button';
 import { Plus } from 'lucide-react';
-import { ProductForm } from '@/components/products/product-form';
 
 export default function ProductsPage() {
   const [products, setProducts] = useState<Product[]>([]);
@@ -26,18 +26,16 @@ export default function ProductsPage() {
     try {
       setLoading(true);
       setError(null);
-      
+
       let response;
       if (searchParams && Object.keys(searchParams).length > 0) {
-        // Use search API if search parameters are provided
-        response = await ProductAPI.searchProducts({ ...searchParams, page, pageSize: 3 });
+        response = await ProductAPI.searchProducts({ ...searchParams, page, pageSize: 5 });
         setIsSearching(true);
       } else {
-        // Use regular get products API
-        response = await ProductAPI.getProducts(page, 3);
+        response = await ProductAPI.getProducts(page, 5);
         setIsSearching(false);
       }
-      
+
       if (response.success) {
         const paginatedData = response.data as PaginatedResponse<Product>;
         setProducts(paginatedData.data);
@@ -57,24 +55,23 @@ export default function ProductsPage() {
     fetchProducts();
   }, []);
 
-  const handleDelete = async (id: string) => {
-    const product = products.find(p => p.id === id);
-    if (product) {
-      setProductToDelete(product);
-      setShowDeleteDialog(true);
-    }
+  const handleEdit = (product: Product) => {
+    setEditingProduct(product);
+    setShowForm(true);
   };
 
-  const handleDeleteConfirm = async (productId: string) => {
+  const handleDelete = (product: Product) => {
+    setProductToDelete(product);
+    setShowDeleteDialog(true);
+  };
+
+  const handleDeleteConfirm = async (id: string) => {
     try {
-      const response = await ProductAPI.deleteProduct(productId);
+      const response = await ProductAPI.deleteProduct(id);
       if (response.success) {
-        // Close dialog immediately on success  
         setShowDeleteDialog(false);
         setProductToDelete(null);
-        // Reset to page 1 and refresh the data
-        setCurrentPage(1);
-        await fetchProducts(1, isSearching ? searchParams : undefined);
+        await fetchProducts(currentPage, isSearching ? searchParams : undefined);
       } else {
         setError(response.message || 'Failed to delete product');
       }
@@ -89,11 +86,6 @@ export default function ProductsPage() {
     await fetchProducts(currentPage, isSearching ? searchParams : undefined);
   };
 
-  const handleEdit = (product: Product) => {
-    setEditingProduct(product);
-    setShowForm(true);
-  };
-
   const handleSearch = (params: SearchParams) => {
     setSearchParams(params);
     setCurrentPage(1);
@@ -106,62 +98,67 @@ export default function ProductsPage() {
   };
 
   return (
-    <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-4 sm:py-6 lg:py-8">
-      <div className="space-y-4 sm:space-y-6">
-        <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
-          <div className="flex-1">
-            <h1 className="text-2xl sm:text-3xl font-bold text-gray-900">Quản lý sản phẩm</h1>
-            <p className="text-sm sm:text-base text-gray-600 mt-1">Quản lý danh sách sản phẩm trong hệ thống</p>
-          </div>
-          <Button onClick={() => setShowForm(true)} className="flex items-center gap-2 w-full sm:w-auto">
-            <Plus className="h-4 w-4" />
-            <span className="hidden sm:inline">Thêm sản phẩm</span>
-            <span className="sm:hidden">Thêm</span>
-          </Button>
+    <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-4 sm:py-6 lg:py-8 space-y-6">
+      {/* Header */}
+      <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
+        <div className="flex-1">
+          <h1 className="text-2xl sm:text-3xl font-bold text-gray-900">Quản lý sản phẩm</h1>
+          <p className="text-sm sm:text-base text-gray-600 mt-1">Quản lý danh sách sản phẩm trong hệ thống</p>
         </div>
-
-        {/* Search Component */}
-        <ProductSearch onSearch={handleSearch} loading={loading} showAdvanced={true} />
-
-        {error && (
-          <div className="bg-destructive/10 border border-destructive/20 text-destructive px-4 py-3 rounded-none">
-            {error}
-          </div>
-        )}
-
-        <ProductTable 
-          data={products} 
-          loading={loading}
-          onEdit={handleEdit}
-          onDelete={handleDelete}
-          currentPage={currentPage}
-          totalPages={totalPages}
-          onPageChange={handlePageChange}
-        />
-
-        {/* Product Form Modal */}
-        {showForm && (
-          <ProductForm
-            product={editingProduct}
-            onClose={() => {
-              setShowForm(false);
-              setEditingProduct(null);
-            }}
-            onSubmit={handleFormSubmit}
-          />
-        )}
-
-        {/* Delete Confirmation Dialog */}
-        <DeleteProductDialog
-          product={productToDelete}
-          isOpen={showDeleteDialog}
-          onClose={() => {
-            setShowDeleteDialog(false);
-            setProductToDelete(null);
-          }}
-          onConfirm={handleDeleteConfirm}
-        />
+        <Button onClick={() => setShowForm(true)} className="flex items-center gap-2 w-full sm:w-auto">
+          <Plus className="h-4 w-4" />
+          <span className="hidden sm:inline">Thêm sản phẩm</span>
+          <span className="sm:hidden">Thêm</span>
+        </Button>
       </div>
+
+      {/* Search */}
+      <ProductSearch onSearch={handleSearch} loading={loading} showAdvanced />
+
+      {/* Error */}
+      {error && (
+        <div className="bg-destructive/10 border border-destructive/20 text-destructive px-4 py-3 rounded-none">
+          {error}
+        </div>
+      )}
+
+      {/* Product Table */}
+      <ProductTable
+        data={products}
+        loading={loading}
+        onEdit={handleEdit}
+        onDelete={(id) => {
+          const product = products.find(p => p.id === id);
+          if (product) handleDelete(product);
+          }}
+        currentPage={currentPage}
+        totalPages={totalPages}
+        onPageChange={handlePageChange}
+      />
+
+
+      {/* Product Form Modal */}
+      {showForm && (
+        <ProductForm
+          product={editingProduct}
+          onClose={() => {
+            setShowForm(false);
+            setEditingProduct(null);
+          }}
+          onSubmit={handleFormSubmit}
+        />
+      )}
+
+      {/* Delete Dialog */}
+      <DeleteProductDialog
+        product={productToDelete}
+        isOpen={showDeleteDialog}
+        onClose={() => {
+          setShowDeleteDialog(false);
+          setProductToDelete(null);
+        }}
+        onConfirm={handleDeleteConfirm}
+      />
     </div>
   );
 }

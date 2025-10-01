@@ -3,55 +3,37 @@
 import * as React from "react";
 import {
   ColumnDef,
-  ColumnFiltersState,
   SortingState,
-  VisibilityState,
   flexRender,
   getCoreRowModel,
-  getFilteredRowModel,
   getSortedRowModel,
   useReactTable,
 } from "@tanstack/react-table";
-import { Eye, Edit, Trash2 } from "lucide-react";
-
-import { Button } from "@/components/ui/button";
-import {
-  Table,
-  TableBody,
-  TableCell,
-  TableHead,
-  TableHeader,
-  TableRow,
-} from "@/components/ui/table";
-import { Skeleton } from "@/components/ui/skeleton";
 import { Product } from "@/lib/api";
+import { Button } from "@/components/ui/button";
+import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
+import { Skeleton } from "@/components/ui/skeleton";
 import Image from "next/image";
 import Link from "next/link";
+import { Eye, Edit, Trash2 } from "lucide-react";
 
+// Columns with accessorFn to avoid accessorKey errors
 const createColumns = (
   onEdit?: (product: Product) => void,
   onDeleteClick?: (product: Product) => void
 ): ColumnDef<Product>[] => [
   {
-    accessorKey: "image",
+    id: "image",
     header: "Hình ảnh",
-    cell: ({ row }) => {
-      const image = row.getValue("image") as string;
+    accessorFn: row => row.image || "",
+    cell: ({ getValue }) => {
+      const image = getValue<string>();
       return (
-        <div className="w-8 h-8 sm:w-12 sm:h-12 rounded-none overflow-hidden bg-gray-100">
+        <div className="w-10 h-10 sm:w-12 sm:h-12 rounded-md overflow-hidden bg-gray-100">
           {image ? (
-            <Image
-              src={image}
-              alt="Product"
-              className="w-full h-full object-cover"
-              width={48}
-              height={48}
-              unoptimized
-            />
+            <Image src={image} alt="Product" width={48} height={48} className="w-full h-full object-cover" unoptimized />
           ) : (
-            <div className="w-full h-full flex items-center justify-center text-gray-400 text-xs">
-              No Image
-            </div>
+            <div className="w-full h-full flex items-center justify-center text-gray-400 text-xs">No Image</div>
           )}
         </div>
       );
@@ -59,84 +41,48 @@ const createColumns = (
     enableSorting: false,
   },
   {
-    accessorKey: "name",
-    header: "Tên sách",
-    cell: ({ row }) => {
-      const name = row.getValue("name") as string;
-      return (
-        <div 
-          className="font-medium max-w-[120px] sm:max-w-[200px] truncate cursor-help"
-          title={name}
-        >
-          {name}
-        </div>
-      );
+    id: "name",
+    header: "Tên sản phẩm",
+    accessorFn: row => row.name,
+    cell: ({ getValue }) => {
+      const name = getValue<string>();
+      return <div className="truncate max-w-[150px] sm:max-w-[250px]" title={name}>{name}</div>;
     },
   },
   {
-    accessorKey: "description",
+    id: "description",
     header: "Mô tả",
-    cell: ({ row }) => {
-      const description = row.getValue("description") as string;
-      return (
-        <div 
-          className="max-w-[100px] sm:max-w-[300px] truncate text-xs sm:text-sm text-muted-foreground cursor-help"
-          title={description}
-        >
-          {description}
-        </div>
-      );
+    accessorFn: row => row.description,
+    cell: ({ getValue }) => {
+      const desc = getValue<string>();
+      return <div className="truncate max-w-[100px] sm:max-w-[300px] text-xs sm:text-sm text-muted-foreground" title={desc}>{desc}</div>;
     },
     enableSorting: false,
   },
   {
-    accessorKey: "price",
+    id: "price",
     header: "Giá",
-    cell: ({ row }) => {
-      const price = parseFloat(row.getValue("price"));
-      const formatted = new Intl.NumberFormat("vi-VN", {
-        style: "currency",
-        currency: "VND",
-      }).format(price);
+    accessorFn: row => Number(row.price),
+    cell: ({ getValue }) => {
+      const formatted = new Intl.NumberFormat("vi-VN", { style: "currency", currency: "VND" }).format(getValue<number>());
       return <div className="font-medium text-xs sm:text-sm">{formatted}</div>;
     },
   },
   {
     id: "actions",
-    enableHiding: false,
+    header: "Hành động",
     cell: ({ row }) => {
       const product = row.original;
-
       return (
         <div className="flex items-center gap-1 sm:gap-2">
-          <Button
-            variant="outline"
-            size="sm"
-            asChild
-            className="h-6 sm:h-8 px-1 sm:px-2 text-xs font-medium text-green-600 border-green-600 hover:bg-green-50"
-          >
-            <Link href={`/products/${product.id}`}>
-              <Eye className="h-3 w-3 sm:h-4 sm:w-4 sm:mr-1" />
-              <span className="hidden sm:inline">Xem</span>
-            </Link>
+          <Button asChild variant="outline" size="sm" className="h-6 sm:h-8 px-1 sm:px-2 text-green-600 border-green-600 hover:bg-green-50">
+            <Link href={`/products/${product.id}`}><Eye className="h-3 w-3 sm:h-4 sm:w-4 sm:mr-1" /><span className="hidden sm:inline">Xem</span></Link>
           </Button>
-          <Button
-            variant="outline"
-            size="sm"
-            className="h-6 sm:h-8 px-1 sm:px-2 text-xs font-medium text-blue-600 border-blue-600 hover:bg-blue-50"
-            onClick={() => onEdit?.(product)}
-          >
-            <Edit className="h-3 w-3 sm:h-4 sm:w-4 sm:mr-1" />
-            <span className="hidden sm:inline">Sửa</span>
+          <Button variant="outline" size="sm" className="h-6 sm:h-8 px-1 sm:px-2 text-blue-600 border-blue-600 hover:bg-blue-50" onClick={() => onEdit?.(product)}>
+            <Edit className="h-3 w-3 sm:h-4 sm:w-4 sm:mr-1"/><span className="hidden sm:inline">Sửa</span>
           </Button>
-          <Button
-            variant="outline"
-            size="sm"
-            className="h-6 sm:h-8 px-1 sm:px-2 text-xs font-medium text-red-600 border-red-600 hover:bg-red-50"
-            onClick={() => onDeleteClick?.(product)}
-          >
-            <Trash2 className="h-3 w-3 sm:h-4 sm:w-4 sm:mr-1" />
-            <span className="hidden sm:inline">Xóa</span>
+          <Button variant="outline" size="sm" className="h-6 sm:h-8 px-1 sm:px-2 text-red-600 border-red-600 hover:bg-red-50" onClick={() => onDeleteClick?.(product)}>
+            <Trash2 className="h-3 w-3 sm:h-4 sm:w-4 sm:mr-1"/><span className="hidden sm:inline">Xóa</span>
           </Button>
         </div>
       );
@@ -155,63 +101,31 @@ interface ProductTableProps {
 }
 
 export function ProductTable({ data, loading = false, onEdit, onDelete, currentPage = 1, totalPages = 1, onPageChange }: ProductTableProps) {
-  const [sorting, setSorting] = React.useState<SortingState>([]);
-  const [columnFilters, setColumnFilters] = React.useState<ColumnFiltersState>([]);
-  const [columnVisibility, setColumnVisibility] = React.useState<VisibilityState>({});
-  const [rowSelection, setRowSelection] = React.useState({});
-  const handleDeleteClick = (product: Product) => {
-    if (onDelete) {
-      onDelete(product.id);
-    }
-  };
-
-  const columns = createColumns(onEdit, handleDeleteClick);
-
   const table = useReactTable({
     data,
-    columns,
-    onSortingChange: setSorting,
-    onColumnFiltersChange: setColumnFilters,
+    columns: createColumns(onEdit, product => onDelete?.(product.id)),
     getCoreRowModel: getCoreRowModel(),
     getSortedRowModel: getSortedRowModel(),
-    getFilteredRowModel: getFilteredRowModel(),
-    onColumnVisibilityChange: setColumnVisibility,
-    onRowSelectionChange: setRowSelection,
-    state: {
-      sorting,
-      columnFilters,
-      columnVisibility,
-      rowSelection,
-    },
   });
-
 
   if (loading) {
     return (
       <div className="w-full">
         <div className="flex items-center py-4">
-          <Skeleton className="h-10 w-64" />
-          <Skeleton className="h-10 w-32 ml-auto" />
+          <Skeleton className="h-10 w-64"/>
+          <Skeleton className="h-10 w-32 ml-auto"/>
         </div>
         <div className="rounded-md border">
           <Table>
             <TableHeader>
               <TableRow>
-                <TableHead><Skeleton className="h-4 w-16" /></TableHead>
-                <TableHead><Skeleton className="h-4 w-20" /></TableHead>
-                <TableHead><Skeleton className="h-4 w-24" /></TableHead>
-                <TableHead><Skeleton className="h-4 w-12" /></TableHead>
-                <TableHead><Skeleton className="h-4 w-16" /></TableHead>
+                {Array.from({length:5}).map((_,i) => <TableHead key={i}><Skeleton className="h-4 w-16"/></TableHead>)}
               </TableRow>
             </TableHeader>
             <TableBody>
-              {Array.from({ length: 5 }).map((_, i) => (
+              {Array.from({length:5}).map((_,i) => (
                 <TableRow key={i}>
-                  <TableCell><Skeleton className="h-12 w-12" /></TableCell>
-                  <TableCell><Skeleton className="h-4 w-32" /></TableCell>
-                  <TableCell><Skeleton className="h-4 w-48" /></TableCell>
-                  <TableCell><Skeleton className="h-4 w-20" /></TableCell>
-                  <TableCell><Skeleton className="h-8 w-24" /></TableCell>
+                  {Array.from({length:5}).map((_,j)=><TableCell key={j}><Skeleton className="h-12 w-12"/></TableCell>)}
                 </TableRow>
               ))}
             </TableBody>
@@ -223,80 +137,42 @@ export function ProductTable({ data, loading = false, onEdit, onDelete, currentP
 
   return (
     <div className="w-full">
-      {/* Table View for all screen sizes */}
       <div className="rounded-md border overflow-x-auto">
         <Table>
           <TableHeader>
-            {table.getHeaderGroups().map((headerGroup) => (
+            {table.getHeaderGroups().map(headerGroup=>(
               <TableRow key={headerGroup.id}>
-                {headerGroup.headers.map((header) => {
-                  return (
-                    <TableHead key={header.id} className="text-xs sm:text-sm">
-                      {header.isPlaceholder
-                        ? null
-                        : flexRender(
-                            header.column.columnDef.header,
-                            header.getContext()
-                          )}
-                    </TableHead>
-                  );
-                })}
+                {headerGroup.headers.map(header=>(
+                  <TableHead key={header.id} className="text-xs sm:text-sm">
+                    {header.isPlaceholder ? null : flexRender(header.column.columnDef.header, header.getContext())}
+                  </TableHead>
+                ))}
               </TableRow>
             ))}
           </TableHeader>
           <TableBody>
-            {table.getRowModel().rows?.length ? (
-              table.getRowModel().rows.map((row) => (
-                <TableRow
-                  key={row.id}
-                  data-state={row.getIsSelected() && "selected"}
-                >
-                  {row.getVisibleCells().map((cell) => (
-                    <TableCell key={cell.id} className="text-xs sm:text-sm">
-                      {flexRender(
-                        cell.column.columnDef.cell,
-                        cell.getContext()
-                      )}
-                    </TableCell>
-                  ))}
-                </TableRow>
-              ))
-            ) : (
+            {table.getRowModel().rows.length ? table.getRowModel().rows.map(row=>(
+              <TableRow key={row.id}>
+                {row.getVisibleCells().map(cell=>(
+                  <TableCell key={cell.id} className="text-xs sm:text-sm">{flexRender(cell.column.columnDef.cell, cell.getContext())}</TableCell>
+                ))}
+              </TableRow>
+            )) : (
               <TableRow>
-                <TableCell
-                  colSpan={columns.length}
-                  className="h-24 text-center"
-                >
-                  Không có sản phẩm nào.
-                </TableCell>
+                <TableCell colSpan={5} className="h-24 text-center">Không có sản phẩm nào.</TableCell>
               </TableRow>
             )}
           </TableBody>
         </Table>
       </div>
-      {/* Server-side Pagination */}
+
+      {/* Pagination */}
       {totalPages > 1 && (
-        <div className="flex flex-col sm:flex-row justify-center items-center gap-4 mt-8">
+        <div className="flex flex-col sm:flex-row justify-center items-center gap-4 mt-4">
           <div className="flex items-center gap-2">
-            <Button
-              variant="outline"
-              disabled={currentPage === 1}
-              onClick={() => onPageChange && onPageChange(currentPage - 1)}
-              className="px-4 py-2"
-            >
-              Trước
-            </Button>
-            <span className="text-sm text-gray-600 bg-gray-100 px-3 py-2 rounded-none">
-              Trang {currentPage} / {totalPages}
-            </span>
-            <Button
-              variant="outline"
-              disabled={currentPage === totalPages}
-              onClick={() => onPageChange && onPageChange(currentPage + 1)}
-              className="px-4 py-2"
-            >
-              Sau
-            </Button>
+            <Button variant="outline" disabled={currentPage===1} onClick={()=>onPageChange?.(currentPage-1)}>Trước</Button>
+            <span className="text-sm text-gray-600 bg-gray-100 px-3 py-2 rounded-none">Trang {currentPage}/{totalPages}</span>
+            <Button variant="outline" disabled={currentPage===totalPages} onClick={()=>onPageChange?.(currentPage+1)}>Sau</Button>
           </div>
         </div>
       )}

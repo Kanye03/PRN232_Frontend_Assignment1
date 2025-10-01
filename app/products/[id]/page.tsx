@@ -22,12 +22,12 @@ export default function ProductDetailPage() {
   const productId = params.id as string;
 
   useEffect(() => {
+    if (!productId) return;
     const fetchProduct = async () => {
       try {
         setLoading(true);
         setError(null);
         const response = await ProductAPI.getProductById(productId);
-        
         if (response.success) {
           setProduct(response.data);
         } else {
@@ -39,23 +39,14 @@ export default function ProductDetailPage() {
         setLoading(false);
       }
     };
-
-    if (productId) {
-      fetchProduct();
-    }
+    fetchProduct();
   }, [productId]);
 
-  const handleDeleteClick = () => {
-    setShowDeleteDialog(true);
-  };
-
-  const handleDeleteConfirm = async (productId: string) => {
+  const handleDeleteConfirm = async (id: string) => {
     try {
-      const response = await ProductAPI.deleteProduct(productId);
+      const response = await ProductAPI.deleteProduct(id);
       if (response.success) {
-        // Close dialog first
         setShowDeleteDialog(false);
-        // Navigate to products page (reset to page 1)
         router.push('/products');
       } else {
         setError(response.message || 'Failed to delete product');
@@ -67,158 +58,111 @@ export default function ProductDetailPage() {
 
   const handleFormSubmit = async () => {
     setShowForm(false);
-    // Refresh the product data
+    // Refresh product data
+    if (!productId) return;
     const response = await ProductAPI.getProductById(productId);
-    if (response.success) {
-      setProduct(response.data);
-    }
+    if (response.success) setProduct(response.data);
   };
 
-
-
+  // Loading skeleton
   if (loading) {
     return (
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-4 sm:py-6 lg:py-8">
-        <div className="space-y-4 sm:space-y-6">
-          <div className="flex items-center gap-4">
-            <Skeleton className="h-8 w-8 sm:h-10 sm:w-10" />
-            <Skeleton className="h-6 w-32 sm:h-8 sm:w-48" />
-          </div>
-          <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 sm:gap-6 lg:gap-8">
-            <Skeleton className="h-64 sm:h-80 lg:h-96 w-full" />
-            <div className="space-y-3 sm:space-y-4">
-              <Skeleton className="h-6 sm:h-8 w-3/4" />
-              <Skeleton className="h-4 sm:h-6 w-1/2" />
-              <Skeleton className="h-24 sm:h-32 w-full" />
-              <Skeleton className="h-8 sm:h-10 w-20 sm:w-24" />
-            </div>
+      <div className="max-w-7xl mx-auto p-4 sm:p-6 lg:p-8">
+        <Skeleton className="h-8 w-32 mb-4" />
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+          <Skeleton className="h-64 sm:h-80 lg:h-96 w-full" />
+          <div className="space-y-3">
+            <Skeleton className="h-6 w-3/4" />
+            <Skeleton className="h-4 w-1/2" />
+            <Skeleton className="h-24 w-full" />
+            <Skeleton className="h-8 w-20" />
           </div>
         </div>
       </div>
     );
   }
 
+  // Error / Not found
   if (error || !product) {
     return (
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-4 sm:py-6 lg:py-8">
-        <div className="text-center py-8 sm:py-12">
-          <h1 className="text-xl sm:text-2xl font-bold text-destructive mb-4">Error</h1>
-          <p className="text-sm sm:text-base text-muted-foreground mb-4 px-4">{error || 'Product not found'}</p>
-          <Button onClick={() => router.push('/')} className="w-full sm:w-auto">
-            <ArrowLeft className="h-4 w-4 mr-2" />
-            Back to Home
-          </Button>
-        </div>
+      <div className="max-w-7xl mx-auto p-4 sm:p-6 lg:p-8 text-center">
+        <h1 className="text-xl sm:text-2xl font-bold text-destructive mb-4">Error</h1>
+        <p className="text-sm sm:text-base text-muted-foreground mb-4">{error || 'Product not found'}</p>
+        <Button onClick={() => router.push('/products')} className="w-full sm:w-auto flex items-center gap-2 justify-center">
+          <ArrowLeft className="h-4 w-4" /> Back to Products
+        </Button>
       </div>
     );
   }
 
   return (
-    <div className="min-h-screen bg-white">
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-4 sm:py-6 lg:py-8">
-        <div className="space-y-4 sm:space-y-6 lg:space-y-8">
-          {/* Header */}
-          <div className="space-y-4">
-            <Button variant="outline" onClick={() => router.back()} className="flex items-center gap-2 w-full sm:w-auto">
-              <ArrowLeft className="h-4 w-4" />
-              Quay lại
-            </Button>
+    <div className="min-h-screen bg-white dark:bg-gray-900">
+      <div className="max-w-7xl mx-auto p-4 sm:p-6 lg:p-8 space-y-6 lg:space-y-8">
+        {/* Back Button */}
+        <Button variant="outline" onClick={() => router.back()} className="flex items-center gap-2 w-full sm:w-auto">
+          <ArrowLeft className="h-4 w-4" /> Quay lại
+        </Button>
+
+        {/* Product Detail */}
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 sm:gap-8 lg:gap-12">
+          {/* Image */}
+          <div className="rounded-lg overflow-hidden bg-gray-100 dark:bg-gray-800 shadow">
+            {product.image ? (
+              <Image
+                src={product.image}
+                alt={product.name}
+                width={600}
+                height={800}
+                className="w-full h-full object-cover hover:scale-105 transition-transform duration-300"
+                unoptimized
+              />
+            ) : (
+              <div className="w-full h-80 flex flex-col items-center justify-center text-gray-400 dark:text-gray-500">
+                <div className="text-6xl mb-2">📚</div>
+                <span>Không có hình ảnh</span>
+              </div>
+            )}
           </div>
 
-          {/* Product Details */}
-          <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 sm:gap-8 lg:gap-12">
-            {/* Product Image */}
-            <div className="space-y-4">
-              <div className="relative">
-                <div className="aspect-[3/4] bg-gray-100 rounded-lg overflow-hidden shadow-lg">
-                  {product.image ? (
-                    <Image
-                      src={product.image}
-                      alt={product.name}
-                      className="w-full h-full object-cover hover:scale-105 transition-transform duration-300"
-                      width={600}
-                      height={800}
-                      unoptimized
-                    />
-                  ) : (
-                    <div className="w-full h-full flex items-center justify-center text-gray-400">
-                      <div className="text-center">
-                        <div className="text-6xl mb-4">📚</div>
-                        <p className="text-lg">Không có hình ảnh</p>
-                      </div>
-                    </div>
-                  )}
-                </div>
-              </div>
+          {/* Info */}
+          <div className="space-y-4 sm:space-y-6">
+            <h1 className="text-2xl sm:text-3xl lg:text-4xl font-bold">{product.name}</h1>
+            <div className="text-xs sm:text-sm text-gray-500 dark:text-gray-400">SKU: {product.id}</div>
+
+            {/* Price */}
+            <div className="text-2xl sm:text-3xl font-bold text-green-600">
+              {new Intl.NumberFormat('vi-VN', { style: 'currency', currency: 'VND' }).format(product.price)}
             </div>
 
-            {/* Product Information */}
-            <div className="space-y-4 sm:space-y-6">
-              {/* Product Title */}
-              <div className="space-y-3 sm:space-y-4">
-                <div className="flex items-start gap-4">
-                  <h1 className="text-2xl sm:text-3xl lg:text-4xl font-bold text-gray-900 flex-1">{product.name}</h1>
-                </div>
-                
-                <div className="text-xs sm:text-sm text-gray-500">
-                  SKU: {product.id}
-                </div>
-              </div>
+            {/* Description */}
+            <div>
+              <h3 className="text-base sm:text-lg font-semibold mb-1">Nội dung</h3>
+              <p className="text-sm sm:text-base text-gray-700 dark:text-gray-300">{product.description}</p>
+            </div>
 
-              {/* Pricing */}
-              <div className="space-y-2">
-                <div className="flex items-center gap-4">
-                  <span className="text-2xl sm:text-3xl font-bold text-green-600">
-                    {new Intl.NumberFormat("vi-VN", {
-                      style: "currency",
-                      currency: "VND",
-                    }).format(product.price)}
-                  </span>
-                </div>
-              </div>
-
-
-              {/* Description */}
-              <div className="space-y-3">
-                <h3 className="text-base sm:text-lg font-semibold text-gray-900">Nội dung</h3>
-                <p className="text-sm sm:text-base text-gray-700 leading-relaxed">{product.description}</p>
-              </div>
-
-
-              {/* Admin Actions */}
-              <div className="flex flex-col sm:flex-row gap-3 pt-4 sm:pt-6 border-t">
-                <Button
-                  variant="outline"
-                  onClick={() => setShowForm(true)}
-                  className="flex items-center justify-center gap-2 px-3 text-blue-600 border-blue-600 hover:bg-blue-50 w-full sm:w-auto"
-                >
-                  <Edit className="h-4 w-4 mr-1" />
-                  Chỉnh sửa
-                </Button>
-                <Button
-                  variant="outline"
-                  onClick={handleDeleteClick}
-                  className="flex items-center justify-center gap-2 px-3 text-red-600 border-red-600 hover:bg-red-50 w-full sm:w-auto"
-                >
-                  <Trash2 className="h-4 w-4 mr-1" />
-                  Xóa sản phẩm
-                </Button>
-              </div>
+            {/* Actions */}
+            <div className="flex flex-col sm:flex-row gap-3 pt-4 sm:pt-6 border-t border-gray-200 dark:border-gray-700">
+              <Button
+                variant="outline"
+                onClick={() => setShowForm(true)}
+                className="flex items-center gap-2 text-blue-600 border-blue-600 hover:bg-blue-50 w-full sm:w-auto"
+              >
+                <Edit className="h-4 w-4" /> Chỉnh sửa
+              </Button>
+              <Button
+                variant="outline"
+                onClick={() => setShowDeleteDialog(true)}
+                className="flex items-center gap-2 text-red-600 border-red-600 hover:bg-red-50 w-full sm:w-auto"
+              >
+                <Trash2 className="h-4 w-4" /> Xóa sản phẩm
+              </Button>
             </div>
           </div>
         </div>
       </div>
 
-      {/* Product Form Modal */}
-      {showForm && (
-        <ProductForm
-          product={product}
-          onClose={() => setShowForm(false)}
-          onSubmit={handleFormSubmit}
-        />
-      )}
-
-      {/* Delete Confirmation Dialog */}
+      {/* Modals */}
+      {showForm && <ProductForm product={product} onClose={() => setShowForm(false)} onSubmit={handleFormSubmit} />}
       <DeleteProductDialog
         product={product}
         isOpen={showDeleteDialog}
