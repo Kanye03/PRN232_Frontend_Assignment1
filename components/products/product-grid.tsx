@@ -100,30 +100,29 @@ export function ProductGrid({ showActions = false, onEdit, onDelete, showSearch 
       {loading && products.length === 0 ? (
         <div className="space-y-4">
           <div className="flex justify-between items-center">
-            <Skeleton className="h-8 sm:h-10 w-48" />
-            {showActions && <Skeleton className="h-8 sm:h-10 w-24 sm:w-32" />}
+            <Skeleton className="h-8 sm:h-10 w-48 bg-blue-100" />
+            {showActions && <Skeleton className="h-8 sm:h-10 w-24 sm:w-32 bg-orange-100" />}
           </div>
           <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-4">
             {Array.from({ length: 8 }).map((_, i) => (
               <div key={i} className="space-y-2 sm:space-y-3">
-                <Skeleton className="h-32 sm:h-40 md:h-48 w-full rounded-lg" />
-                <Skeleton className="h-3 sm:h-4 w-3/4 rounded" />
-                <Skeleton className="h-2 sm:h-3 w-1/2 rounded" />
-                <Skeleton className="h-6 sm:h-8 w-16 sm:w-20 rounded" />
+                <Skeleton className="h-32 sm:h-40 md:h-48 w-full rounded-lg bg-blue-50" />
+                <Skeleton className="h-3 sm:h-4 w-3/4 rounded bg-blue-50" />
+                <Skeleton className="h-2 sm:h-3 w-1/2 rounded bg-blue-50" />
+                <Skeleton className="h-6 sm:h-8 w-16 sm:w-20 rounded bg-orange-100" />
               </div>
             ))}
           </div>
         </div>
       ) : (
         <>
-          {/* Header */}
           {showActions && (
             <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
               <div className="flex-1">
-                <h1 className="text-2xl sm:text-3xl font-bold text-gray-900">Quản lý sản phẩm</h1>
-                <p className="text-sm sm:text-base text-gray-600 mt-1">Quản lý danh sách sản phẩm trong hệ thống</p>
+                <h1 className="text-2xl sm:text-3xl font-bold text-orange-700">Quản lý sản phẩm</h1>
+                <p className="text-sm sm:text-base text-blue-700 mt-1">Quản lý danh sách sản phẩm trong hệ thống</p>
               </div>
-              <Button onClick={() => setShowForm(true)} className="flex items-center gap-2 w-full sm:w-auto">
+              <Button onClick={() => setShowForm(true)} className="flex items-center gap-2 w-full sm:w-auto bg-orange-500 hover:bg-orange-600 text-white">
                 <Plus className="h-4 w-4" />
                 <span className="hidden sm:inline">Thêm sản phẩm</span>
                 <span className="sm:hidden">Thêm</span>
@@ -131,23 +130,25 @@ export function ProductGrid({ showActions = false, onEdit, onDelete, showSearch 
             </div>
           )}
 
-          {/* Search */}
           {showSearch && <ProductSearch onSearch={handleSearch} loading={loading} showAdvanced={true} />}
 
-          {/* Error */}
-          {error && <div className="bg-destructive/10 border border-destructive/20 text-destructive px-4 py-3 rounded-md">{error}</div>}
+          {error && (
+            <div className="bg-red-50 border border-red-200 text-red-700 px-4 py-3 rounded-md">
+              {error}
+            </div>
+          )}
 
-          {/* Empty state */}
           {products.length === 0 && !loading ? (
             <div className="text-center py-8 sm:py-12">
-              <p className="text-muted-foreground text-base sm:text-lg">Không có sản phẩm</p>
+              <p className="text-blue-700 text-base sm:text-lg">Không có sản phẩm</p>
               {showActions && (
-                <Button onClick={() => setShowForm(true)} className="mt-4 w-full sm:w-auto">Thêm sản phẩm</Button>
+                <Button onClick={() => setShowForm(true)} className="mt-4 w-full sm:w-auto bg-orange-500 hover:bg-orange-600 text-white">
+                  Thêm sản phẩm
+                </Button>
               )}
             </div>
           ) : (
             <>
-              {/* Grid */}
               <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-3 sm:gap-4 md:gap-6">
                 {products.map((product) => (
                   <ProductCard
@@ -161,12 +162,11 @@ export function ProductGrid({ showActions = false, onEdit, onDelete, showSearch 
                 ))}
               </div>
 
-              {/* Pagination */}
               {totalPages > 1 && (
                 <div className="flex justify-center items-center gap-4 mt-8">
-                  <Button variant="outline" disabled={currentPage === 1} onClick={() => handlePageChange(currentPage - 1)} className="px-4 py-2">Trước</Button>
-                  <span className="text-sm text-gray-600 bg-gray-100 px-3 py-2 rounded-md">Trang {currentPage} / {totalPages}</span>
-                  <Button variant="outline" disabled={currentPage === totalPages} onClick={() => handlePageChange(currentPage + 1)} className="px-4 py-2">Sau</Button>
+                  <Button variant="outline" disabled={currentPage === 1} onClick={() => handlePageChange(currentPage - 1)} className="px-4 py-2 border-blue-200 text-blue-600 hover:bg-blue-50">Trước</Button>
+                  <span className="text-sm text-blue-700 bg-blue-100 px-3 py-2 rounded-md">Trang {currentPage} / {totalPages}</span>
+                  <Button variant="outline" disabled={currentPage === totalPages} onClick={() => handlePageChange(currentPage + 1)} className="px-4 py-2 border-blue-200 text-blue-600 hover:bg-blue-50">Sau</Button>
                 </div>
               )}
             </>
@@ -174,7 +174,6 @@ export function ProductGrid({ showActions = false, onEdit, onDelete, showSearch 
         </>
       )}
 
-      {/* Product Form Modal */}
       {showForm && (
         <ProductForm
           product={editingProduct}
