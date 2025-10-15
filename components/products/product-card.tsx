@@ -1,13 +1,15 @@
 'use client';
 
 import { useState } from 'react';
-import { Product } from '@/lib/api';
+import { Product, ProductAPI } from '@/lib/api';
+import { useAuth } from '@/contexts/AuthContext';
 import Image from 'next/image';
 import { Card, CardContent } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
-import { Eye, Edit, Trash2 } from 'lucide-react';
+import { Eye, Edit, Trash2, ShoppingCart } from 'lucide-react';
 import Link from 'next/link';
 import { DeleteProductDialog } from './delete-product-dialog';
+import { toast } from 'sonner';
 
 interface ProductCardProps {
   product: Product;
@@ -19,6 +21,8 @@ interface ProductCardProps {
 
 export function ProductCard({ product, onEdit, onDelete, showActions = true, clickable = true }: ProductCardProps) {
   const [showDeleteDialog, setShowDeleteDialog] = useState(false);
+  const [addingToCart, setAddingToCart] = useState(false);
+  const { user } = useAuth();
 
   const handleDeleteClick = (e: React.MouseEvent) => {
     e.stopPropagation();
@@ -27,6 +31,25 @@ export function ProductCard({ product, onEdit, onDelete, showActions = true, cli
 
   const handleDeleteConfirm = async (productId: string) => {
     if (onDelete) await onDelete(productId);
+  };
+
+  const handleAddToCart = async (e: React.MouseEvent) => {
+    e.stopPropagation();
+    if (!user) {
+      toast.error('Please sign in to add items to cart');
+      return;
+    }
+
+    setAddingToCart(true);
+    try {
+      await ProductAPI.addToCart(product.id, 1);
+      toast.success('Added to cart!');
+    } catch (error) {
+      console.error('Error adding to cart:', error);
+      toast.error('Failed to add to cart');
+    } finally {
+      setAddingToCart(false);
+    }
   };
 
   const cardContent = (
@@ -95,8 +118,19 @@ export function ProductCard({ product, onEdit, onDelete, showActions = true, cli
           {product.name}
         </h3>
         <p className="mt-1 text-green-600 font-bold text-sm sm:text-base lg:text-lg">
-          {new Intl.NumberFormat('vi-VN', { style: 'currency', currency: 'VND' }).format(product.price)}
+          ${product.price.toFixed(2)}
         </p>
+        {user && (
+          <Button
+            size="sm"
+            className="w-full mt-2"
+            onClick={handleAddToCart}
+            disabled={addingToCart}
+          >
+            <ShoppingCart className="h-4 w-4 mr-2" />
+            {addingToCart ? 'Adding...' : 'Add to Cart'}
+          </Button>
+        )}
       </CardContent>
     </Card>
   );

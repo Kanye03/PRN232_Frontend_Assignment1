@@ -1,5 +1,6 @@
 // API configuration and types
 import { config } from './config';
+import { supabase } from './supabase';
 
 const API_BASE_URL = config.api.baseUrl;
 
@@ -55,17 +56,77 @@ export interface SearchParams {
   sortOrder?: 0 | 1; // 0 = A-Z, 1 = Z-A
 }
 
+export interface CartItem {
+  productId: string;
+  name: string;
+  price: number;
+  quantity: number;
+  imageUrl?: string;
+  totalPrice: number;
+}
+
+export interface Cart {
+  id: string;
+  userId: string;
+  items: CartItem[];
+  totalAmount: number;
+  totalItems: number;
+  createdAt: string;
+  updatedAt: string;
+}
+
+export interface OrderItem {
+  productId: string;
+  name: string;
+  price: number;
+  quantity: number;
+  imageUrl?: string;
+  totalPrice: number;
+}
+
+export interface Order {
+  id: string;
+  userId: string;
+  items: OrderItem[];
+  totalAmount: number;
+  totalItems: number;
+  shippingAddress: string;
+  notes?: string;
+  status: 'PENDING' | 'CONFIRMED' | 'CANCELLED';
+  createdAt: string;
+  updatedAt: string;
+}
+
+export interface CreateOrderData {
+  shippingAddress: string;
+  notes?: string;
+}
+
 // API functions
 export class ProductAPI {
+  private static async getAuthHeaders(): Promise<Record<string, string>> {
+    const { data: { session } } = await supabase.auth.getSession();
+    const headers: Record<string, string> = {
+      'Content-Type': 'application/json',
+    };
+    
+    if (session?.access_token) {
+      headers['Authorization'] = `Bearer ${session.access_token}`;
+    }
+    
+    return headers;
+  }
+
   private static async request<T>(
     endpoint: string,
     options: RequestInit = {}
   ): Promise<ApiResponse<T>> {
     const url = `${API_BASE_URL}${endpoint}`;
+    const authHeaders = await this.getAuthHeaders();
     
     const response = await fetch(url, {
       headers: {
-        'Content-Type': 'application/json',
+        ...authHeaders,
         ...options.headers,
       },
       ...options,
@@ -84,9 +145,16 @@ export class ProductAPI {
     method: 'POST' | 'PUT' = 'POST'
   ): Promise<ApiResponse<T>> {
     const url = `${API_BASE_URL}${endpoint}`;
+    const { data: { session } } = await supabase.auth.getSession();
+    
+    const headers: Record<string, string> = {};
+    if (session?.access_token) {
+      headers['Authorization'] = `Bearer ${session.access_token}`;
+    }
     
     const response = await fetch(url, {
       method,
+      headers,
       body: formData,
     });
 
@@ -157,5 +225,52 @@ export class ProductAPI {
     const endpoint = `/products/search${queryString ? `?${queryString}` : ''}`;
     
     return this.request<PaginatedResponse<Product>>(endpoint);
+  }
+
+  // Cart API methods
+  static async getCart(): Promise<ApiResponse<Cart>> {
+    return this.request<Cart>('/cart');
+  }
+
+  static async addToCart(productId: string, quantity: number): Promise<ApiResponse<Cart>> {
+    return this.request<Cart>('/cart/items', {
+      method: 'POST',
+      body: JSON.stringify({ productId, quantity }),
+    });
+  }
+
+  static async updateCartItem(productId: string, quantity: number): Promise<ApiResponse<Cart>> {
+    return this.request<Cart>(`/cart/items/${productId}`, {
+      method: 'PATCH',
+      body: JSON.stringify({ quantity }),
+    });
+  }
+
+  static async removeFromCart(productId: string): Promise<ApiResponse<Cart>> {
+    return this.request<Cart>(`/cart/items/${productId}`, {
+      method: 'DELETE',
+    });
+  }
+
+  static async clearCart(): Promise<ApiResponse<null>> {
+    return this.request<null>('/cart', {
+      method: 'DELETE',
+    });
+  }
+
+  // Order API methods
+  static async createOrder(orderData: CreateOrderData): Promise<ApiResponse<Order>> {
+    return this.request<Order>('/orders', {
+      method: 'POST',
+      body: JSON.stringify(orderData),
+    });
+  }
+
+  static async getMyOrders(): Promise<ApiResponse<Order[]>> {
+    return this.request<Order[]>('/orders/my');
+  }
+
+  static async getOrderById(orderId: string): Promise<ApiResponse<Order>> {
+    return this.request<Order>(`/orders/${orderId}`);
   }
 }

@@ -5,17 +5,30 @@ import { usePathname } from 'next/navigation';
 import { useState } from 'react';
 import { Button } from '@/components/ui/button';
 import { cn } from '@/lib/utils';
-import { Package, Home, Menu, X, ShoppingBag } from 'lucide-react';
+import { Package, Home, Menu, X, ShoppingBag, ShoppingCart, User, LogOut, LogIn } from 'lucide-react';
+import { useAuth } from '@/contexts/AuthContext';
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuSeparator,
+  DropdownMenuTrigger,
+} from '@/components/ui/dropdown-menu';
 
 
 export function Navigation() {
   const pathname = usePathname();
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
+  const { user, signOut } = useAuth();
 
   const navItems = [
     { href: '/', label: 'Trang chủ', icon: Home },
     { href: '/products', label: 'Sản phẩm', icon: Package },
   ];
+
+  const handleSignOut = async () => {
+    await signOut();
+  };
 
   return (
     <nav className="sticky top-0 z-50 bg-gradient-to-r from-orange-300 via-blue-100 to-blue-200 shadow-md">
@@ -48,6 +61,52 @@ export function Navigation() {
                 </Link>
               );
             })}
+            
+            {user && (
+              <Link href="/cart">
+                <Button
+                  variant="ghost"
+                  className="text-blue-800 hover:bg-blue-200 hover:text-blue-900"
+                >
+                  <ShoppingCart className="h-4 w-4" />
+                </Button>
+              </Link>
+            )}
+
+            {user ? (
+              <DropdownMenu>
+                <DropdownMenuTrigger asChild>
+                  <Button variant="ghost" className="text-blue-800 hover:bg-blue-200 hover:text-blue-900">
+                    <User className="h-4 w-4" />
+                    <span className="ml-1">{user.email}</span>
+                  </Button>
+                </DropdownMenuTrigger>
+                <DropdownMenuContent align="end">
+                  <DropdownMenuItem asChild>
+                    <Link href="/orders">My Orders</Link>
+                  </DropdownMenuItem>
+                  <DropdownMenuSeparator />
+                  <DropdownMenuItem onClick={handleSignOut}>
+                    <LogOut className="h-4 w-4 mr-2" />
+                    Sign out
+                  </DropdownMenuItem>
+                </DropdownMenuContent>
+              </DropdownMenu>
+            ) : (
+              <div className="flex items-center gap-2">
+                <Link href="/login">
+                  <Button variant="ghost" className="text-blue-800 hover:bg-blue-200 hover:text-blue-900">
+                    <LogIn className="h-4 w-4 mr-1" />
+                    Sign in
+                  </Button>
+                </Link>
+                <Link href="/register">
+                  <Button className="bg-orange-400 text-white hover:bg-orange-500">
+                    Sign up
+                  </Button>
+                </Link>
+              </div>
+            )}
           </div>
 
           <div className="md:hidden">
